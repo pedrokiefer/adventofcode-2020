@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -28,6 +27,30 @@ func (p *Point) Multiply(v int) (x, y int) {
 	x = p.X * v
 	y = p.Y * v
 	return
+}
+
+type SinCosPair struct {
+	Sin int
+	Cos int
+}
+
+var (
+	SinCosTable = map[int]SinCosPair{
+		-270: {Sin: 1, Cos: 0},
+		-180: {Sin: 0, Cos: -1},
+		-90:  {Sin: -1, Cos: 0},
+		90:   {Sin: 1, Cos: 0},
+		180:  {Sin: 0, Cos: -1},
+		270:  {Sin: -1, Cos: 0},
+	}
+)
+
+func (p *Point) Rotate(angle int) {
+	sc := SinCosTable[angle]
+	x := sc.Cos*p.X - sc.Sin*p.Y
+	y := sc.Sin*p.X + sc.Cos*p.Y
+	p.X = x
+	p.Y = y
 }
 
 var (
@@ -67,14 +90,15 @@ type Instruction struct {
 type Navigation struct {
 	Heading         Point
 	CurrentPosition Point
-	WayPoint        Point
+	WayPoint        *Point
 }
 
 func NewNavigation() *Navigation {
+	wp := NewPoint(10, 1)
 	return &Navigation{
 		Heading:         EastHeading,
 		CurrentPosition: NewPoint(0, 0),
-		WayPoint:        NewPoint(10, 1),
+		WayPoint:        &wp,
 	}
 }
 
@@ -135,17 +159,9 @@ func (n *Navigation) ExecuteWaypoint(insts []*Instruction) {
 			x, y := n.WayPoint.Multiply(ins.Value)
 			n.CurrentPosition.Add(x, y)
 		case Right:
-			radians := float64(ins.Value) * math.Pi / 180
-			x := math.Cos(-radians)*float64(n.WayPoint.X) - math.Sin(-radians)*float64(n.WayPoint.Y)
-			y := math.Sin(-radians)*float64(n.WayPoint.X) + math.Cos(-radians)*float64(n.WayPoint.Y)
-			n.WayPoint.X = int(x)
-			n.WayPoint.Y = int(y)
+			n.WayPoint.Rotate(-ins.Value)
 		case Left:
-			radians := float64(ins.Value) * math.Pi / 180
-			x := math.Cos(radians)*float64(n.WayPoint.X) - math.Sin(radians)*float64(n.WayPoint.Y)
-			y := math.Sin(radians)*float64(n.WayPoint.X) + math.Cos(radians)*float64(n.WayPoint.Y)
-			n.WayPoint.X = int(x)
-			n.WayPoint.Y = int(y)
+			n.WayPoint.Rotate(ins.Value)
 		}
 	}
 }
@@ -171,17 +187,9 @@ func main() {
 	insts := LoadNavigationInstructions(f)
 	nav := NewNavigation()
 	nav.Execute(insts)
-
 	fmt.Printf("Distance: %#v\n", nav.ManhattanDistance())
 
-	f, err = os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	insts = LoadNavigationInstructions(f)
 	nav = NewNavigation()
 	nav.ExecuteWaypoint(insts)
-
 	fmt.Printf("Distance: %#v\n", nav.ManhattanDistance())
 }

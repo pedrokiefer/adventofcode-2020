@@ -67,23 +67,31 @@ func TestCanExecuteSingleInstructionsWayPoint(t *testing.T) {
 
 	nav.ExecuteWaypoint([]*Instruction{{Action: Forward, Value: 10}})
 	assert.Equal(t, Point{X: 100, Y: 10}, nav.CurrentPosition)
-	assert.Equal(t, Point{X: 10, Y: 1}, nav.WayPoint)
+	assert.Equal(t, &Point{X: 10, Y: 1}, nav.WayPoint)
 
 	nav.ExecuteWaypoint([]*Instruction{{Action: North, Value: 3}})
 	assert.Equal(t, Point{X: 100, Y: 10}, nav.CurrentPosition)
-	assert.Equal(t, Point{X: 10, Y: 4}, nav.WayPoint)
+	assert.Equal(t, &Point{X: 10, Y: 4}, nav.WayPoint)
 
 	nav.ExecuteWaypoint([]*Instruction{{Action: Forward, Value: 7}})
 	assert.Equal(t, Point{X: 170, Y: 38}, nav.CurrentPosition)
-	assert.Equal(t, Point{X: 10, Y: 4}, nav.WayPoint)
+	assert.Equal(t, &Point{X: 10, Y: 4}, nav.WayPoint)
 
 	nav.ExecuteWaypoint([]*Instruction{{Action: Right, Value: 90}})
 	assert.Equal(t, Point{X: 170, Y: 38}, nav.CurrentPosition)
-	assert.Equal(t, Point{X: 4, Y: -10}, nav.WayPoint)
+	assert.Equal(t, &Point{X: 4, Y: -10}, nav.WayPoint)
+
+	nav.ExecuteWaypoint([]*Instruction{{Action: Left, Value: 90}})
+	assert.Equal(t, Point{X: 170, Y: 38}, nav.CurrentPosition)
+	assert.Equal(t, &Point{X: 10, Y: 4}, nav.WayPoint)
+
+	nav.ExecuteWaypoint([]*Instruction{{Action: Right, Value: 90}})
+	assert.Equal(t, Point{X: 170, Y: 38}, nav.CurrentPosition)
+	assert.Equal(t, &Point{X: 4, Y: -10}, nav.WayPoint)
 
 	nav.ExecuteWaypoint([]*Instruction{{Action: Forward, Value: 11}})
 	assert.Equal(t, Point{X: 214, Y: -72}, nav.CurrentPosition)
-	assert.Equal(t, Point{X: 4, Y: -10}, nav.WayPoint)
+	assert.Equal(t, &Point{X: 4, Y: -10}, nav.WayPoint)
 }
 
 func TestCanExecuteInstructionsWaypoint(t *testing.T) {
@@ -99,6 +107,6 @@ F11`)))
 	nav.ExecuteWaypoint(insts)
 
 	assert.Equal(t, Point{X: 214, Y: -72}, nav.CurrentPosition)
-	assert.Equal(t, Point{X: 4, Y: -10}, nav.WayPoint)
+	assert.Equal(t, &Point{X: 4, Y: -10}, nav.WayPoint)
 	assert.Equal(t, 286, nav.ManhattanDistance())
 }
