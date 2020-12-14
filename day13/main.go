@@ -7,23 +7,29 @@ import (
 	"log"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
 
+type Bus struct {
+	ID int
+	N  int
+}
+
 type Pair struct {
-	Bus       int
+	Bus       *Bus
 	Timestamp int
 }
 
 type Puzzle struct {
 	Timestamp int
-	Buses     []int
+	Buses     []*Bus
 }
 
 func LoadPuzzle(input io.ReadCloser) *Puzzle {
 	puzzle := &Puzzle{
-		Buses: []int{},
+		Buses: []*Bus{},
 	}
 	defer input.Close()
 	data, _ := ioutil.ReadAll(input)
@@ -31,12 +37,12 @@ func LoadPuzzle(input io.ReadCloser) *Puzzle {
 	lines := strings.Split(txt, "\n")
 	ts, _ := strconv.Atoi(lines[0])
 	puzzle.Timestamp = ts
-	for _, v := range strings.Split(lines[1], ",") {
+	for i, v := range strings.Split(lines[1], ",") {
 		if v == "x" {
 			continue
 		}
 		bus, _ := strconv.Atoi(v)
-		puzzle.Buses = append(puzzle.Buses, bus)
+		puzzle.Buses = append(puzzle.Buses, &Bus{ID: bus, N: i})
 	}
 	return puzzle
 }
@@ -51,9 +57,9 @@ func Abs(x int) int {
 func (p *Puzzle) ProcessBuses() []Pair {
 	result := []Pair{}
 	for _, b := range p.Buses {
-		v := float64(p.Timestamp) / float64(b)
-		f := int(math.Floor(v)) * b
-		c := int(math.Ceil(v)) * b
+		v := float64(p.Timestamp) / float64(b.ID)
+		f := int(math.Floor(v)) * b.ID
+		c := int(math.Ceil(v)) * b.ID
 
 		if Abs(c-p.Timestamp) < Abs(f-p.Timestamp) {
 			result = append(result, Pair{Bus: b, Timestamp: c})
@@ -78,6 +84,29 @@ func FindBusPair(ts int, pairs []Pair) Pair {
 	return shortestWait
 }
 
+func NextTimestamp(start, step, id, remainder int) (int, int) {
+	mult := step * id
+	i := start
+	for ; i < mult; i += step {
+		if (i+remainder)%id == 0 {
+			break
+		}
+	}
+	return i, mult
+}
+
+func FindCommonTimestamp(buses []*Bus) int {
+	sort.Slice(buses, func(i, j int) bool {
+		return buses[i].ID < buses[i].ID
+	})
+	ts := 1
+	step := 1
+	for _, b := range buses {
+		ts, step = NextTimestamp(ts, step, b.ID, b.N)
+	}
+	return ts
+}
+
 func main() {
 	filename := os.Args[1]
 	f, err := os.Open(filename)
@@ -89,5 +118,6 @@ func main() {
 	pairs := puzzle.ProcessBuses()
 	p := FindBusPair(puzzle.Timestamp, pairs)
 
-	fmt.Printf("Result: %d\n", p.Bus*(p.Timestamp-puzzle.Timestamp))
+	fmt.Printf("Result: %d\n", p.Bus.ID*(p.Timestamp-puzzle.Timestamp))
+	fmt.Printf("Result: %d\n", FindCommonTimestamp(puzzle.Buses))
 }
